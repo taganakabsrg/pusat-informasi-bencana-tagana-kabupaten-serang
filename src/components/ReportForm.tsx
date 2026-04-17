@@ -150,9 +150,10 @@ export default function ReportForm() {
 
       // SYNC KE GOOGLE SHEETS (Opsi 2)
       try {
-        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwlKu6xAKGcsGw54A240-EwvuzrDHdAtY3NRCJD8HwOemKF0dyybhC01SM_szCqQg0ozQ/exec";
+        const GOOGLE_SHEETS_URL = import.meta.env.VITE_GOOGLE_SHEETS_URL;
         
-        const syncData = {
+        if (GOOGLE_SHEETS_URL) {
+          const syncData = {
           disaster_date: formData.disaster_date,
           disaster_type: formData.disaster_type,
           jalan: formData.jalan,
@@ -176,7 +177,8 @@ export default function ReportForm() {
           },
           body: JSON.stringify(syncData),
         });
-      } catch (err) {
+      }
+    } catch (err) {
         console.error("Gagal sinkronisasi ke Google Sheets:", err);
       }
 
