@@ -147,6 +147,39 @@ export default function ReportForm() {
         },
         timestamp: serverTimestamp()
       });
+
+      // SYNC KE GOOGLE SHEETS (Opsi 2)
+      try {
+        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwlKu6xAKGcsGw54A240-EwvuzrDHdAtY3NRCJD8HwOemKF0dyybhC01SM_szCqQg0ozQ/exec";
+        
+        const syncData = {
+          disaster_date: formData.disaster_date,
+          disaster_type: formData.disaster_type,
+          jalan: formData.jalan,
+          rt: formData.rt,
+          rw: formData.rw,
+          desa: formData.desa,
+          kecamatan: formData.kecamatan,
+          total_kk: Number(formData.total_kk_affected),
+          total_jiwa: getTotalPeople(),
+          reporter: formData.reporter_name,
+          status: formData.status_level,
+          pilah: dataPilah
+        };
+
+        // Mengirim data ke Google Script
+        fetch(GOOGLE_SHEETS_URL, {
+          method: 'POST',
+          mode: 'no-cors', // Penting untuk Apps Script agar tidak error CORS
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(syncData),
+        });
+      } catch (err) {
+        console.error("Gagal sinkronisasi ke Google Sheets:", err);
+      }
+
       navigate('/');
     } catch (error) {
       console.error("Error adding report:", error);
