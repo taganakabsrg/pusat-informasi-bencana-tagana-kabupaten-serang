@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: reports
+    // Fields: reporter_name, address (obj), disaster_type, timestamp, 
+    //         status_level, total_kk_affected, total_people_affected, location (obj)
+    //
+    // Collection: affected_citizens
+    // Fields: report_id, full_name, gender, family_status, age, 
+    //         kk_number, nik_number, address (obj), house_condition, house_photo_url
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidReport(data) {
+      return data.reporter_name is string && data.reporter_name.size() > 0 && data.reporter_name.size() < 100 &&
+             data.disaster_type is string &&
+             data.status_level in ['tinggi', 'sedang', 'rendah'] &&
+             data.total_kk_affected is number && data.total_kk_affected >= 0 &&
+             data.total_people_affected is number && data.total_people_affected >= 0;
+    }
+
+    function isValidCitizen(data) {
+      return data.report_id is string &&
+             data.full_name is string && data.full_name.size() > 0 &&
+             data.gender in ['Laki-laki', 'Perempuan'] &&
+             data.family_status in ['KK', 'Istri', 'Anak', 'Lainnya'] &&
+             data.nik_number is string && data.nik_number.matches("^\\d{16}$");
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             (request.auth.token.email == "taganakabsrg@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    // Reports Access
+    match /reports/{reportId} {
+      allow read: if true; // Public view for dashboard
+      allow create, update: if isAuthenticated() && isValidReport(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Affected Citizens Access
+    match /affected_citizens/{citizenId} {
+      allow read: if true; // Public view for transparency/dashboard
+      allow create, update: if isAuthenticated() && isValidCitizen(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}

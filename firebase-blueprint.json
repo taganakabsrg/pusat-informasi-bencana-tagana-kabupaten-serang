@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Report": {
+      "title": "Disaster Report",
+      "description": "Main disaster event report for a specific location in Serang.",
+      "type": "object",
+      "properties": {
+        "reporter_name": { "type": "string", "description": "Name of the person reporting the disaster" },
+        "address": {
+          "type": "object",
+          "properties": {
+            "jalan": { "type": "string" },
+            "rt": { "type": "string" },
+            "rw": { "type": "string" },
+            "desa": { "type": "string" },
+            "kecamatan": { "type": "string" }
+          },
+          "required": ["desa", "kecamatan"]
+        },
+        "disaster_type": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status_level": { "type": "string", "enum": ["tinggi", "sedang", "rendah"] },
+        "total_kk_affected": { "type": "number" },
+        "total_people_affected": { "type": "number" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        }
+      },
+      "required": ["reporter_name", "disaster_type", "status_level", "total_kk_affected", "total_people_affected"]
+    },
+    "AffectedCitizen": {
+      "title": "Affected Citizen",
+      "description": "Details of an individual affected by a specific disaster report.",
+      "type": "object",
+      "properties": {
+        "report_id": { "type": "string", "description": "Reference to the associated disaster report" },
+        "full_name": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "family_status": { "type": "string", "enum": ["KK", "Istri", "Anak", "Lainnya"] },
+        "age": { "type": "number" },
+        "kk_number": { "type": "string" },
+        "nik_number": { "type": "string" },
+        "address": { "$ref": "Report/properties/address" },
+        "house_condition": { "type": "string", "enum": ["RR", "RB", "Hancur"] },
+        "house_photo_url": { "type": "string", "format": "url" }
+      },
+      "required": ["report_id", "full_name", "gender", "family_status", "nik_number"]
+    }
+  },
+  "firestore": {
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "Collection of disaster reports."
+    },
+    "/affected_citizens/{citizenId}": {
+      "schema": "AffectedCitizen",
+      "description": "Collection of affected citizens related to reports."
+    }
+  }
+}
