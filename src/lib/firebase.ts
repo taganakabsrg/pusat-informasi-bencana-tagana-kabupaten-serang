@@ -3,32 +3,25 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
+import firebaseLocalConfig from '../../firebase-applet-config.json';
+
 // Coba ambil dari Environment Variables (Vercel/Production)
-// Jika tidak ada, coba ambil dari file lokal (AI Studio Development)
-// Catatan: Di produksi, pastikan variabel VITE_FIREBASE_* sudah diatur di dashboard Vercel
+// Jika tidak ada, gunakan fallback dari file lokal (AI Studio Development)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseLocalConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseLocalConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseLocalConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseLocalConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseLocalConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseLocalConfig.appId
 };
 
-// Validasi Semua Variabel Penting
-const requiredVars = {
-  'VITE_FIREBASE_API_KEY': firebaseConfig.apiKey,
-  'VITE_FIREBASE_AUTH_DOMAIN': firebaseConfig.authDomain,
-  'VITE_FIREBASE_PROJECT_ID': firebaseConfig.projectId
-};
+// Validasi minimal
+if (!firebaseConfig.apiKey) {
+  throw new Error('Konfigurasi Firebase tidak ditemukan. Jika di Vercel, pastikan Environment Variables sudah diatur.');
+}
 
-Object.entries(requiredVars).forEach(([key, value]) => {
-  if (!value) {
-    throw new Error(`Variabel ${key} tidak ditemukan di Vercel. Pastikan Anda sudah menambahkannya di Settings > Environment Variables.`);
-  }
-});
-
-const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)';
+const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseLocalConfig.firestoreDatabaseId || '(default)';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
