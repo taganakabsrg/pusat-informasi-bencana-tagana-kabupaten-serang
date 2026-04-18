@@ -15,10 +15,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Validasi Env Vars
-if (!firebaseConfig.apiKey) {
-  throw new Error('Konfigurasi Firebase (VITE_FIREBASE_API_KEY) tidak ditemukan. Pastikan sudah memasukkan Environment Variables di Vercel.');
-}
+// Validasi Semua Variabel Penting
+const requiredVars = {
+  'VITE_FIREBASE_API_KEY': firebaseConfig.apiKey,
+  'VITE_FIREBASE_AUTH_DOMAIN': firebaseConfig.authDomain,
+  'VITE_FIREBASE_PROJECT_ID': firebaseConfig.projectId
+};
+
+Object.entries(requiredVars).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`Variabel ${key} tidak ditemukan di Vercel. Pastikan Anda sudah menambahkannya di Settings > Environment Variables.`);
+  }
+});
 
 const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)';
 
