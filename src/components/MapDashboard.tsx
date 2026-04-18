@@ -236,7 +236,9 @@ export default function MapDashboard() {
                 <Popup 
                   maxWidth={220} 
                   className="rounded-lg shadow-xl overflow-hidden p-0 bg-slate-800 border border-blue-500 text-slate-200"
-                  onClose={() => setActiveReportId(null)}
+                  eventHandlers={{
+                    remove: () => setActiveReportId(null)
+                  }}
                 >
                 <style>{`
                   .leaflet-popup-content-wrapper { background: #1e293b; color: #f1f5f9; border-radius: 8px; border: 1px solid #3b82f6; padding:0; }

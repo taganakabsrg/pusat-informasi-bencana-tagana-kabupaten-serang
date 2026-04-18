@@ -15,6 +15,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Validasi Env Vars
+if (!firebaseConfig.apiKey) {
+  throw new Error('Konfigurasi Firebase (VITE_FIREBASE_API_KEY) tidak ditemukan. Pastikan sudah memasukkan Environment Variables di Vercel.');
+}
+
 const firestoreDatabaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '(default)';
 
 const app = initializeApp(firebaseConfig);
