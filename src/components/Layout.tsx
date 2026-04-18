@@ -9,13 +9,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [user] = useAuthState(auth);
   const location = useLocation();
 
-  const handleLogin = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider);
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      alert(`Gagal Login Google: ${error.message}\n\nPastikan URL aplikasi Anda sudah didaftarkan di Firebase Console (Authorized Domains).`);
+    }
   };
 
-  const handleGuestLogin = () => {
-    signInAnonymously(auth);
+  const handleGuestLogin = async () => {
+    try {
+      await signInAnonymously(auth);
+    } catch (error: any) {
+      console.error("Guest Login Error:", error);
+      alert(`Gagal Login Tamu: ${error.message}`);
+    }
   };
 
   const handleLogout = () => {
