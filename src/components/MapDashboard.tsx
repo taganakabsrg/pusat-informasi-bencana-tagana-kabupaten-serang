@@ -149,6 +149,18 @@ export default function MapDashboard() {
 
   const sortedKecamatans = Object.keys(statsByKecamatan).sort();
 
+  // Global Aggregation (Overall Stats)
+  const globalStats = filteredReports.reduce((acc, r) => {
+    const type = r.disaster_type || 'Lainnya';
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Identify Hotspots (Kecamatan with most reports)
+  const hotspots = Object.entries(statsByKecamatan)
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, 3);
+
   const downloadCSV = () => {
     // Define CSV Headers
     const headers = [
@@ -373,6 +385,61 @@ export default function MapDashboard() {
                     <div className="text-[10px] text-slate-500 uppercase font-black">Periode</div>
                     <div className="text-blue-400 font-mono font-bold">{filterMonth || 'SEMUA WAKTU'}</div>
                   </div>
+                </div>
+
+                {/* Global Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+                    <h3 className="text-blue-400 text-[10px] font-black uppercase mb-4 tracking-[0.2em] flex items-center gap-2">
+                      <Activity size={12} /> Rekapitulasi Jenis Bencana
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.keys(globalStats).length === 0 ? (
+                        <div className="text-slate-500 text-xs italic">Belum ada data</div>
+                      ) : (
+                        Object.entries(globalStats).map(([type, count]) => (
+                          <div key={type} className="bg-slate-900 border border-slate-700/50 p-3 rounded-lg flex justify-between items-center group hover:border-blue-500/30 transition-all">
+                            <span className="text-[11px] font-bold text-slate-300 uppercase leading-none">{type}</span>
+                            <span className="text-lg font-mono font-black text-white leading-none">{count}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+                    <h3 className="text-red-400 text-[10px] font-black uppercase mb-4 tracking-[0.2em] flex items-center gap-2">
+                      <AlertTriangle size={12} /> Titik Rawan (Hotspot) Wilayah
+                    </h3>
+                    <div className="space-y-3">
+                      {hotspots.length === 0 ? (
+                        <div className="text-slate-500 text-xs italic">Belum ada data</div>
+                      ) : (
+                        hotspots.map(([kec, data], idx) => (
+                          <div key={kec} className="bg-slate-900 border border-slate-700/50 p-3 rounded-lg flex items-center gap-4 group hover:border-red-500/30 transition-all">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-mono font-black text-xs ${idx === 0 ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                              #{idx + 1}
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-[12px] font-black text-white uppercase">{kec}</div>
+                              <div className="text-[10px] text-slate-500 font-bold uppercase">{data.total} Kejadian Dilaporkan</div>
+                            </div>
+                            <div className="flex gap-1">
+                              {Object.keys(data.types).slice(0, 2).map(t => (
+                                <span key={t} className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-400 uppercase font-bold border border-slate-700">{t}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center gap-2">
+                  <div className="h-px bg-slate-800 flex-1"></div>
+                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest whitespace-nowrap">Rincian Per Kecamatan</span>
+                  <div className="h-px bg-slate-800 flex-1"></div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
