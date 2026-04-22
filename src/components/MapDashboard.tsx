@@ -7,7 +7,8 @@ import { db } from '../lib/firebase';
 import { DisasterReport } from '../types';
 import { SERANG_CENTER } from '../constants';
 import { Link } from 'react-router-dom';
-import { Download } from 'lucide-react';
+import { Download, Waves, Flame, Wind, Mountain, Activity, TreeDeciduous, Droplets, AlertTriangle } from 'lucide-react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { BMKGAlertBar, BMKGEarthquakeCard } from './BMKGMonitoring';
 
 // Fix Leaflet icon issue
@@ -21,6 +22,45 @@ const DefaultIcon = L.icon({
   iconAnchor: [12, 41],
 });
 L.Marker.prototype.options.icon = DefaultIcon;
+
+const getDisasterIcon = (type: string, level: string) => {
+  const t = type.toLowerCase();
+  let IconComponent = AlertTriangle;
+  
+  if (t.includes('banjir')) IconComponent = Waves;
+  else if (t.includes('kebakaran')) IconComponent = Flame;
+  else if (t.includes('angin') || t.includes('puting')) IconComponent = Wind;
+  else if (t.includes('longsor')) IconComponent = Mountain;
+  else if (t.includes('gempa')) IconComponent = Activity;
+  else if (t.includes('pohon')) IconComponent = TreeDeciduous;
+  else if (t.includes('kering')) IconComponent = Droplets;
+
+  const color = level === 'tinggi' ? '#ef4444' : level === 'sedang' ? '#f59e0b' : '#10b981';
+  
+  const iconHtml = renderToStaticMarkup(
+    <div style={{ 
+      color, 
+      backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+      padding: '6px', 
+      borderRadius: '50%', 
+      border: `2px solid ${color}`,
+      boxShadow: `0 0 15px ${color}44`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <IconComponent size={20} strokeWidth={2.5} />
+    </div>
+  );
+
+  return L.divIcon({
+    html: iconHtml,
+    className: 'custom-disaster-icon',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18]
+  });
+};
 
 function StatusBadge({ level }: { level: string }) {
   const colors = {
@@ -208,14 +248,26 @@ export default function MapDashboard() {
             Legenda Peta
           </div>
           <div className="flex flex-col gap-2 text-[11px] text-slate-300">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> Bahaya Tinggi
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-red-500 bg-slate-900 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+              </div> 
+              <span>Bahaya Tinggi (Merah)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> Bahaya Sedang
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-amber-500 bg-slate-900 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+              </div> 
+              <span>Bahaya Sedang (Kuning)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Bahaya Rendah
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-emerald-500 bg-slate-900 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+              </div> 
+              <span>Bahaya Rendah (Hijau)</span>
+            </div>
+            <div className="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-500 italic">
+              * Ikon akan berubah otomatis sesuai jenis bencana (Api, Banjir, dll)
             </div>
           </div>
         </div>
@@ -270,6 +322,7 @@ export default function MapDashboard() {
                   )}
                   <Marker 
                     position={[report.location.lat, report.location.lng]}
+                    icon={getDisasterIcon(report.disaster_type, report.status_level)}
                     eventHandlers={{
                       click: () => setActiveReportId(report.id),
                     }}
