@@ -55,3 +55,18 @@ export interface AffectedCitizen {
   house_condition: 'RR' | 'RB' | 'Hancur';
   house_photo_url: string;
 }
+
+export interface BMKGEarthquake {
+  Tanggal: string;
+  Jam: string;
+  DateTime: string;
+  Coordinates: string;
+  Lintang: string;
+  Bujur: string;
+  Magnitude: string;
+  Kedalaman: string;
+  Wilayah: string;
+  Potensi: string;
+  Dirasakan: string;
+  Shakemap: string;
+}

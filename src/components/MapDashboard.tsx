@@ -8,6 +8,7 @@ import { DisasterReport } from '../types';
 import { SERANG_CENTER } from '../constants';
 import { Link } from 'react-router-dom';
 import { Download } from 'lucide-react';
+import { BMKGAlertBar, BMKGEarthquakeCard } from './BMKGMonitoring';
 
 // Fix Leaflet icon issue
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -42,6 +43,7 @@ export default function MapDashboard() {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [activeView, setActiveView] = useState<'map' | 'stats'>('map');
   const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
@@ -89,6 +91,23 @@ export default function MapDashboard() {
     typeof r.location.lat === 'number' && typeof r.location.lng === 'number' && 
     !isNaN(r.location.lat) && !isNaN(r.location.lng)
   );
+
+  // Aggregation for Sub-district (Kecamatan) Stats
+  const statsByKecamatan = filteredReports.reduce((acc, r) => {
+    const kec = r.address.kecamatan?.trim() || 'Tidak Diketahui';
+    const type = r.disaster_type || 'Lainnya';
+    
+    if (!acc[kec]) {
+      acc[kec] = { total: 0, types: {} as Record<string, number> };
+    }
+    
+    acc[kec].total += 1;
+    acc[kec].types[type] = (acc[kec].types[type] || 0) + 1;
+    
+    return acc;
+  }, {} as Record<string, { total: number, types: Record<string, number> }>);
+
+  const sortedKecamatans = Object.keys(statsByKecamatan).sort();
 
   const downloadCSV = () => {
     // Define CSV Headers
@@ -175,6 +194,8 @@ export default function MapDashboard() {
           </div>
         </div>
 
+        <BMKGEarthquakeCard />
+
         <button
           onClick={downloadCSV}
           className="w-full mt-2 hidden md:flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 hover:border-slate-600 px-3 py-2 rounded text-[11px] font-bold uppercase transition-colors"
@@ -201,72 +222,138 @@ export default function MapDashboard() {
       </aside>
 
       {/* Map Area */}
-      <section className="flex-1 min-h-[350px] relative bg-[#0c111d] overflow-hidden">
-        <MapContainer
-          center={SERANG_CENTER}
-          zoom={10}
-          style={{ height: '100%', width: '100%' }}
-          ref={mapRef as any}
-        >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          />
-          {reportsWithValidLocations.map((report) => (
-            <React.Fragment key={report.id}>
-              {activeReportId === report.id && (
-                <Circle
-                  center={[report.location.lat, report.location.lng]}
-                  radius={1500}
-                  pathOptions={{
-                    color: report.status_level === 'tinggi' ? '#ef4444' : report.status_level === 'sedang' ? '#f59e0b' : '#10b981',
-                    fillColor: report.status_level === 'tinggi' ? '#ef4444' : report.status_level === 'sedang' ? '#f59e0b' : '#10b981',
-                    fillOpacity: 0.15,
-                    weight: 2,
-                    dashArray: '5, 5'
-                  }}
-                />
-              )}
-              <Marker 
-                position={[report.location.lat, report.location.lng]}
-                eventHandlers={{
-                  click: () => setActiveReportId(report.id),
-                }}
-              >
-                <Popup 
-                  maxWidth={220} 
-                  className="rounded-lg shadow-xl overflow-hidden p-0 bg-slate-800 border border-blue-500 text-slate-200"
-                  eventHandlers={{
-                    remove: () => setActiveReportId(null)
-                  }}
-                >
-                <style>{`
-                  .leaflet-popup-content-wrapper { background: #1e293b; color: #f1f5f9; border-radius: 8px; border: 1px solid #3b82f6; padding:0; }
-                  .leaflet-popup-tip { background: #3b82f6; border-color: #3b82f6; }
-                  .leaflet-popup-content { margin: 0; }
-                `}</style>
-                <div className="p-3 font-sans w-[200px]">
-                  <div className="text-[12px] font-bold text-blue-500 uppercase border-b border-slate-700 pb-1 mb-2">
-                    KEC. {report.address.kecamatan}
-                  </div>
-                  <div className="text-[11px] leading-relaxed space-y-1">
-                    <div><strong>Desa:</strong> {report.address.desa}</div>
-                    <div><strong>Status:</strong> <span className={report.status_level === 'tinggi' ? 'text-red-500' : report.status_level === 'sedang' ? 'text-amber-500' : 'text-emerald-500'}>{report.status_level.toUpperCase()}</span></div>
-                    <div><strong>Jenis:</strong> {report.disaster_type}</div>
-                    <div><strong>Terdampak:</strong> {report.total_people_affected} Jiwa</div>
-                  </div>
-                  <Link
-                    to={`/report/${report.id}`}
-                    className="block w-full text-center bg-blue-500 text-white py-1.5 rounded text-[11px] font-bold hover:bg-blue-600 transition-all mt-3"
+      <section className="flex-1 min-h-[350px] relative bg-[#0c111d] overflow-hidden flex flex-col">
+        <BMKGAlertBar />
+        
+        {/* View Toggle */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] flex bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-full p-1 shadow-2xl">
+          <button 
+            onClick={() => setActiveView('map')}
+            className={`px-5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${activeView === 'map' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Peta Visual
+          </button>
+          <button 
+            onClick={() => setActiveView('stats')}
+            className={`px-5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${activeView === 'stats' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Statistik Wilayah
+          </button>
+        </div>
+
+        <div className="flex-1 relative">
+          {activeView === 'map' ? (
+            <MapContainer
+              center={SERANG_CENTER}
+              zoom={10}
+              style={{ height: '100%', width: '100%' }}
+              ref={mapRef as any}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              />
+              {reportsWithValidLocations.map((report) => (
+                <React.Fragment key={report.id}>
+                  {activeReportId === report.id && (
+                    <Circle
+                      center={[report.location.lat, report.location.lng]}
+                      radius={1500}
+                      pathOptions={{
+                        color: report.status_level === 'tinggi' ? '#ef4444' : report.status_level === 'sedang' ? '#f59e0b' : '#10b981',
+                        fillColor: report.status_level === 'tinggi' ? '#ef4444' : report.status_level === 'sedang' ? '#f59e0b' : '#10b981',
+                        fillOpacity: 0.15,
+                        weight: 2,
+                        dashArray: '5, 5'
+                      }}
+                    />
+                  )}
+                  <Marker 
+                    position={[report.location.lat, report.location.lng]}
+                    eventHandlers={{
+                      click: () => setActiveReportId(report.id),
+                    }}
                   >
-                    DETAIL LAPORAN
-                  </Link>
+                    <Popup 
+                      maxWidth={220} 
+                      className="rounded-lg shadow-xl overflow-hidden p-0 bg-slate-800 border border-blue-500 text-slate-200"
+                      eventHandlers={{
+                        remove: () => setActiveReportId(null)
+                      }}
+                    >
+                    <style>{`
+                      .leaflet-popup-content-wrapper { background: #1e293b; color: #f1f5f9; border-radius: 8px; border: 1px solid #3b82f6; padding:0; }
+                      .leaflet-popup-tip { background: #3b82f6; border-color: #3b82f6; }
+                      .leaflet-popup-content { margin: 0; }
+                    `}</style>
+                    <div className="p-3 font-sans w-[200px]">
+                      <div className="text-[12px] font-bold text-blue-500 uppercase border-b border-slate-700 pb-1 mb-2">
+                        KEC. {report.address.kecamatan}
+                      </div>
+                      <div className="text-[11px] leading-relaxed space-y-1">
+                        <div><strong>Desa:</strong> {report.address.desa}</div>
+                        <div><strong>Status:</strong> <span className={report.status_level === 'tinggi' ? 'text-red-500' : report.status_level === 'sedang' ? 'text-amber-500' : 'text-emerald-500'}>{report.status_level.toUpperCase()}</span></div>
+                        <div><strong>Jenis:</strong> {report.disaster_type}</div>
+                        <div><strong>Terdampak:</strong> {report.total_people_affected} Jiwa</div>
+                      </div>
+                      <Link
+                        to={`/report/${report.id}`}
+                        className="block w-full text-center bg-blue-500 text-white py-1.5 rounded text-[11px] font-bold hover:bg-blue-600 transition-all mt-3"
+                      >
+                        DETAIL LAPORAN
+                      </Link>
+                    </div>
+                  </Popup>
+                </Marker>
+                </React.Fragment>
+              ))}
+            </MapContainer>
+          ) : (
+            <div className="absolute inset-0 bg-slate-900 overflow-y-auto p-4 md:p-8 pt-20 custom-scrollbar">
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="flex justify-between items-end border-b border-slate-800 pb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Statistik Bencana Per Kecamatan</h2>
+                    <p className="text-slate-400 text-sm mt-1">Rekapitulasi jumlah kejadian berdasarkan laporan yang masuk</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-500 uppercase font-black">Periode</div>
+                    <div className="text-blue-400 font-mono font-bold">{filterMonth || 'SEMUA WAKTU'}</div>
+                  </div>
                 </div>
-              </Popup>
-            </Marker>
-            </React.Fragment>
-          ))}
-        </MapContainer>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {sortedKecamatans.length === 0 ? (
+                    <div className="py-20 text-center text-slate-500 italic">Tidak ada data untuk periode ini</div>
+                  ) : (
+                    sortedKecamatans.map(kec => (
+                      <div key={kec} className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden shadow-lg group hover:border-blue-500/50 transition-all">
+                        <div className="p-4 bg-slate-800/80 flex justify-between items-center border-b border-slate-700/50">
+                          <h3 className="font-extrabold text-white text-lg tracking-tight uppercase">Kec. {kec}</h3>
+                          <div className="flex items-center gap-2">
+                             <span className="text-[10px] uppercase font-bold text-slate-500">Total Kejadian</span>
+                             <span className="bg-blue-600 text-white text-xs font-black px-2.5 py-1 rounded-lg min-w-[30px] text-center">{statsByKecamatan[kec].total}</span>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(statsByKecamatan[kec].types).map(([type, count]) => (
+                              <div key={type} className="bg-[#0f172a] border border-slate-700 px-3 py-2 rounded-lg flex items-center gap-3">
+                                <span className="text-[12px] font-bold text-slate-300 uppercase tracking-tight">{type}</span>
+                                <span className="w-[1px] h-3 bg-slate-700 mx-0.5 opacity-20"></span>
+                                <span className="text-blue-400 font-mono font-bold">{count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Sidebar Right: Report List */}

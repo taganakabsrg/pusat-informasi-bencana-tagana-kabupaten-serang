@@ -1,6 +1,6 @@
 {
   "name": "Pusat Informasi Bencana Tagana Kab. Serang",
-  "description": "Sistem Informasi Manajemen Bencana Kabupaten Serang, Banten. Memetakan kejadian bencana dan pendataan warga terdampak secara real-time.",
+  "description": "Sistem Informasi Manajemen Bencana Kabupaten Serang, Banten. Memetakan kejadian bencana, pendataan warga terdampak, serta monitoring cuaca dan gempa bumi real-time Terintegrasi BMKG.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
