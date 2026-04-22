@@ -219,6 +219,8 @@ export default function MapDashboard() {
     <div className="flex flex-col md:flex-row h-[calc(100vh-60px)] w-full">
       {/* Sidebar Left: Stats */}
       <aside className="w-full md:w-[260px] border-b md:border-b-0 md:border-r border-slate-700 bg-slate-950 p-4 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto custom-scrollbar shrink-0 z-10">
+        <BMKGEarthquakeCard />
+
         <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex-1 md:flex-none">
           <div className="text-[11px] uppercase text-slate-400 font-semibold mb-2">Periode Data</div>
           <input 
@@ -245,8 +247,6 @@ export default function MapDashboard() {
             {filteredReports.reduce((acc, r) => acc + r.total_people_affected, 0).toLocaleString()}
           </div>
         </div>
-
-        <BMKGEarthquakeCard />
 
         <button
           onClick={downloadCSV}
